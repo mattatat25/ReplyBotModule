@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/status-stable-brightgreen" />
 </p>
 
-A lightweight Meshtastic firmware module that responds to simple slash commands via direct message to provide quick link health diagnostics.
+A lightweight Meshtastic firmware module that responds to simple slash commands via direct message to provide quick link health diagnostics. Should be in the 2.7.19 release.
 <p align="center">
   <img src="replybot_banner.jpeg" />
 </p>
