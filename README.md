@@ -1,5 +1,5 @@
 # ReplyBotModule
-MESHTASTIC REPLYBOT MODULE
+A lightweight Meshtastic firmware module that responds to simple slash commands via direct message to provide quick link health diagnostics.
 
 The ReplyBot module adds a friendly, lightweight auto-responder to your Meshtastic node. When enabled it listens for simple slash commands and replies with useful diagnostics to help you understand the health of your off‑grid mesh network. 
 This document explains what the module does, how to use it, and offers some context about why it might be helpful.
@@ -8,7 +8,7 @@ WHY A REPLYBOT?
 
 In a mesh network it’s sometimes hard to tell whether your messages are reaching other nodes or how healthy the link is. ReplyBot lets you send a quick command from any Meshtastic device and get an immediate response. 
 Each reply reports three useful diagnostics: the hop distance (how many relays were used to deliver your message), the received signal strength indicator (RSSI, a measure of signal quality in dBm, normalized if necessary) and the signal‑to‑noise ratio (SNR), 
-which shows how much the signal stands above the radio noise floor. It’s like a radio “mic check” for your mesh: you can quickly verify that your device is connected and see the health of the connection.
+which shows how much the signal stands above the radio noise floor. It’s like a radio “mic check” for your mesh: you can quickly verify that your device is connected and see the health of the connection. This module is intentionally human-facing and optimized for simplicity, not packet efficiency.
 
 SUPPORTED COMMANDS
 
@@ -31,9 +31,9 @@ Direct messages have a 15‑second cooldown, while broadcast commands on the pri
 HOW IT WORKS 
 
 The ReplyBot module is written in C++ as part of the Meshtastic firmware. When compiled into the firmware, it registers itself as a text message handler and runs in promiscuous mode so it can see broadcasts as well as direct messages. 
-Internally, it listens for incoming packets on the text message port, filters out any traffic that isn’t addressed to it or broadcast on the primary channel, 
+Internally, it listens for incoming text message packets, filters out any traffic that isn’t addressed to it or broadcast on the primary channel, 
 parses the payload for supported slash commands, applies a per‑sender cooldown, computes the hop distance/RSSI/SNR diagnostics and finally sends a direct message back to the sender. 
-The reply uses a friendly format such as “🎙️ Mic Check : 1 Hops away | RSSI –75 | SNR 9.4”. You can customize the wording or remove the emoji by editing the source code before building your firmware.
+The reply uses a friendly format such as “🎙️ Mic Check : 1 Hop away | RSSI –75 | SNR 9.4”. You can customize the wording or remove the emoji by editing the source code before building your firmware.
 
 INSTALLATION AND COMPILATION
 
