@@ -1,11 +1,16 @@
 # ReplyBotModule
 
-![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)
-![Meshtastic](https://img.shields.io/badge/Meshtastic-Firmware-success)
-![Language](https://img.shields.io/badge/language-C%2B%2B-informational)
-![Status](https://img.shields.io/badge/status-stable-brightgreen)
+<p align="center">
+  <img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" />
+  <img src="https://img.shields.io/badge/Meshtastic-Firmware-success" />
+  <img src="https://img.shields.io/badge/language-C%2B%2B-informational" />
+  <img src="https://img.shields.io/badge/status-stable-brightgreen" />
+</p>
 
 A lightweight Meshtastic firmware module that responds to simple slash commands via direct message to provide quick link health diagnostics.
+<p align="center">
+  <img src="replybot_banner.jpeg" />
+</p>
 
 ReplyBot adds a friendly, low-overhead auto-responder to your Meshtastic node. When enabled, it listens for simple slash commands and replies with useful diagnostics so you can quickly verify mesh connectivity and link health.
 
@@ -124,8 +129,6 @@ To disable the module, remove the `#undef` line and rebuild.
 
 ---
 
-
-
 ## Troubleshooting
 
 If replies aren’t working:
@@ -134,6 +137,15 @@ If replies aren’t working:
 - Use the **primary channel** for broadcasts  
 - Respect cooldown limits  
 - Verify mesh connectivity  
+
+---
+
+## Shout‑out 
+
+Huge thanks to [lzmesh.com](http://lzmesh.com) for helping me in my advancement of learning Meshtastic.
+ <a href="https://discord.gg/FuK8fFjwjq">
+    <img src="https://img.shields.io/badge/Discord-%235865F2.svg?logo=discord&logoColor=white" />
+  </a>
 
 ---
 
