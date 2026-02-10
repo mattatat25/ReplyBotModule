@@ -26,7 +26,9 @@ Only the primary channel is monitored for broadcasts, messages on secondary chan
 RATE LIMITING
 
 To keep the network responsive for everyone, ReplyBot enforces a per‑sender cooldown. When you send a command, the bot checks when it last responded to your node and ignores requests that arrive too frequently. 
-Direct messages have a 15‑second cooldown, while broadcast commands on the primary channel have a 60‑second cooldown. Simply wait a bit between commands if you find yourself rate‑limited.
+Direct messages have a 15‑second cooldown, while broadcast commands on the primary channel have a 60‑second cooldown. Simply wait a bit between commands if you find yourself rate‑limited. 
+Default rate limit is 15 seconds for a DM and 60 seconds for the primary channel. 
+THIS SHOULD BE ADJUSTED BASED ON YOUR DEPLOYMENT!
 
 HOW IT WORKS 
 
