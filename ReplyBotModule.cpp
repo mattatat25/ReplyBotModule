@@ -9,8 +9,8 @@
  * received the bot responds with a short status message that includes the hop count
  * (minimum number of relays), RSSI and SNR of the received packet.  To avoid spamming
  * the network it enforces a per‑sender cooldown between responses.  By default the
- * module is enabled; define MESHTASTIC_EXCLUDE_REPLYBOT at build time to exclude it
- * entirely.  See the official firmware documentation for guidance on adding modules.
+ * module is Disabled; include #undef MESHTASTIC_EXCLUDE_REPLYBOT at build time to include it
+ * See the official firmware documentation for guidance on adding modules.
  */
 
 #include "Channels.h"
