@@ -17,6 +17,6 @@ class ReplyBotModule : public SinglePortModule
     bool senderHasPublicKey(uint32_t sender) const;
     void sendDirectReply(const meshtastic_MeshPacket &rx, const char *text);
     void sendChannelReply(const meshtastic_MeshPacket &rx, const char *text);
-    void sendText(uint32_t destination, uint8_t channel, const char *text);
+    void sendText(uint32_t destination, uint32_t channel, const char *text);
 };
 #endif // MESHTASTIC_EXCLUDE_REPLYBOT
