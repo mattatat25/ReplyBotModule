@@ -166,7 +166,7 @@ void ReplyBotModule::sendChannelReply(const meshtastic_MeshPacket &rx, const cha
     sendText(NODENUM_BROADCAST, rx.channel, text);
 }
 
-void ReplyBotModule::sendText(uint32_t destination, uint8_t channel, const char *text)
+void ReplyBotModule::sendText(uint32_t destination, uint32_t channel, const char *text)
 {
     if (!text)
         return;
