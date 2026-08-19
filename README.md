@@ -4,161 +4,153 @@
   <img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" />
   <img src="https://img.shields.io/badge/Meshtastic-Firmware-success" />
   <img src="https://img.shields.io/badge/language-C%2B%2B-informational" />
-  <img src="https://img.shields.io/badge/status-stable-brightgreen" />
+  <img src="https://img.shields.io/badge/status-maintained-brightgreen" />
 </p>
 
-A lightweight Meshtastic firmware module that responds to simple slash commands via direct message to provide quick link health diagnostics. Officially included in the 2.7.19 release. It is disabled by default and must be manually configured in a code editor.
+A lightweight Meshtastic firmware module that turns a slash command into a practical radio-link check. ReplyBot reports hop count, RSSI, and SNR and is designed to remain useful with modern PKI-based Meshtastic direct messaging.
+
+ReplyBot was originally accepted into Meshtastic firmware in the 2.7.x line. This repository tracks the standalone module, compatibility work, tests, and documentation used to keep it healthy as Meshtastic evolves.
+
 <p align="center">
   <img src="replybot_banner.jpeg" />
 </p>
 
-ReplyBot adds a friendly, low-overhead auto-responder to your Meshtastic node. When enabled, it listens for simple slash commands and replies with useful diagnostics so you can quickly verify mesh connectivity and link health.
+## What it does
 
----
-
-## Why ReplyBot?
-
-In a mesh network, it’s not always obvious whether your messages are reaching other nodes—or how good the link actually is.
-
-ReplyBot acts as a quick **“mic check”** for your mesh. You send a command from any Meshtastic device and get an immediate response with real link diagnostics.
-
-Each reply includes:
-
-- **Hop count** — how many relays delivered your message  
-- **RSSI** — received signal strength (dBm, normalized if needed)  
-- **SNR** — how far above the noise floor your signal is  
-
-This module is intentionally **human-facing**, optimized for clarity and usefulness rather than packet efficiency.
-
----
-
-## Supported Commands
-
-Commands are case-insensitive and must be prefixed with a slash (`/`). Any extra text after the command is ignored.
+Send one of the supported commands to a ReplyBot-enabled node:
 
 | Command | Description |
 | --- | --- |
-| `/ping` | Confirms the bot is alive and returns diagnostics |
+| `/ping` | Return link diagnostics |
 | `/hello` | Alias for `/ping` |
 | `/test` | Alias for `/ping` |
 
-### Where commands work
+Commands are case-insensitive. Leading whitespace is allowed, and text after the command token is ignored.
 
-- **Direct Message** → Bot replies directly  
-- **Primary Channel broadcast** → Bot sees it and replies via DM  
-- **Secondary channels** → Ignored  
+Example direct reply:
 
-ReplyBot runs in *promiscuous mode* so it can see primary‑channel broadcasts without spamming the network.
+```text
+🎙️ Mic Check: 1 Hops | RSSI -75 | SNR 9.4
+```
 
----
+## Modern DM compatibility
 
-## Example
+Current Meshtastic firmware expects normal text DMs to use PKI and can refuse a unicast when the destination public key is unavailable. That matters to ReplyBot because its original behavior always tried to turn a Primary-channel command into a private reply.
 
-**Command:**
+The compatibility rewrite uses this policy:
 
-    /ping
+| Command arrives by | Sender key available | Reply behavior |
+| --- | --- | --- |
+| Direct message | Any | Direct reply attempt; never made public |
+| Primary channel | Yes | Private direct reply |
+| Primary channel | No | Primary-channel fallback tagged with requester node ID |
+| Secondary channel | Any | Ignored |
 
-**Reply:**
+A fallback looks like:
 
-    🎙️ Mic Check: 1 Hop away | RSSI -75 | SNR 9.4
+```text
+🎙️ For !1234abcd: 2 Hops | RSSI -91 | SNR 7.5
+```
 
----
+The module does **not** implement its own crypto. In normal unlicensed operation it checks whether a sender key is available with the same NodeDB key-resolution path used by current firmware and lets the normal Meshtastic router perform PKI encryption and delivery. Licensed/ham mode is allowed to use the firmware's non-PKI unicast path without requiring a sender key.
 
-## Rate Limiting
+See [`docs/PKI_COMPATIBILITY.md`](docs/PKI_COMPATIBILITY.md) for the full design rationale and test matrix.
 
-To keep the mesh responsive, ReplyBot enforces per‑sender cooldowns:
+## Rate limiting
 
-| Message Type | Cooldown |
+ReplyBot remains intentionally conservative with airtime:
+
+| Message type | Per-sender cooldown |
 | --- | --- |
-| Direct Message | 15 seconds |
-| Primary Channel broadcast | 60 seconds |
+| Direct message | 15 seconds |
+| Primary-channel command | 60 seconds |
 
-If you’re rate‑limited, just wait a bit and try again.
+The small fixed-size cooldown table avoids dynamic allocation and keeps memory overhead predictable.
 
----
+## Why the module listens promiscuously
 
-## Customization
+ReplyBot registers for the text-message port and runs in promiscuous mode so it can observe Primary-channel commands that are not addressed specifically to the bot. It still ignores broadcasts on secondary channels.
 
-Developers can tune ReplyBot behavior via constants in the source:
+This lets a user perform a quick mesh check without already having a working private conversation with the ReplyBot node.
 
-- `REPLYBOT_DM_COOLDOWN_MS`  
-- `REPLYBOT_LF_COOLDOWN_MS`  
-- `REPLYBOT_COOLDOWN_SLOTS`  
+## Diagnostics
 
-Defaults:
+Each successful command reports:
 
-- 15‑second DM cooldown  
-- 60‑second primary channel cooldown  
+- **Hops** — the firmware-derived hop count for the received packet.
+- **RSSI** — received signal strength in dBm.
+- **SNR** — signal-to-noise ratio reported by the radio.
 
-Adjust these based on mesh size and traffic density.
+These are receive-side measurements from the ReplyBot node. They describe the path into the bot, not a full bidirectional link budget.
 
----
+## Building into Meshtastic firmware
 
-## How It Works
+ReplyBot is excluded by default in normal firmware builds. In a Meshtastic source tree that contains the module, enable it for your variant by ensuring the ReplyBot exclusion macro is undefined, for example:
 
-ReplyBot is written in C++ as part of the Meshtastic firmware.
+```cpp
+#undef MESHTASTIC_EXCLUDE_REPLYBOT
+```
 
-When compiled in, it:
+Then build and flash firmware normally for the target board.
 
-1. Registers as a text message handler  
-2. Listens for incoming text packets  
-3. Filters messages addressed to it or broadcast on the primary channel  
-4. Parses supported slash commands  
-5. Applies per‑sender cooldowns  
-6. Computes hop count, RSSI, and SNR  
-7. Sends a direct message reply to the sender  
+Because Meshtastic build flags and variant layouts evolve, always compare the standalone files in this repository with the current `meshtastic/firmware` tree before copying them into a new release branch.
 
-The reply format is customizable, including optional emoji.
+## Tests
 
----
+The transport decision and command parser live in `ReplyBotLogic.h`, which has no Meshtastic dependencies. That allows a small C++11 host test to run without compiling the entire firmware tree.
 
-## Installation
+Run it locally with:
 
-ReplyBot is **not enabled by default**.
+```bash
+g++ -std=c++11 -Wall -Wextra -Werror tests/replybot_logic_test.cpp -o /tmp/replybot_logic_test
+/tmp/replybot_logic_test
+```
 
-To enable it:
+GitHub Actions runs the same check on pushes and pull requests.
 
-1. Open `Variant.h` in the Meshtastic firmware source.  
-2. Add the following line:
+Host tests cover:
 
-        #undef MESHTASTIC_EXCLUDE_REPLYBOT
+- lowercase and mixed-case commands
+- leading whitespace
+- command suffix boundaries
+- invalid commands
+- private-vs-public fallback routing decisions
 
-3. Build and flash firmware as usual for your board.
+Radio/device testing is still required before an upstream Meshtastic firmware PR. The recommended hardware matrix is documented in [`docs/PKI_COMPATIBILITY.md`](docs/PKI_COMPATIBILITY.md).
 
-To disable the module, remove the `#undef` line and rebuild.
+## Source layout
 
----
+- `ReplyBotModule.cpp` — Meshtastic packet handling, diagnostics, cooldowns, and transmission.
+- `ReplyBotModule.h` — firmware module interface.
+- `ReplyBotLogic.h` — dependency-free parser and reply-routing policy.
+- `tests/replybot_logic_test.cpp` — host-side behavior tests.
+- `docs/PKI_COMPATIBILITY.md` — design notes, security rationale, and integration test plan.
 
-## Troubleshooting
+## Design goals
 
-If replies aren’t working:
+ReplyBot should remain:
 
-- Confirm the module is compiled in  
-- Use the **primary channel** for broadcasts  
-- Respect cooldown limits  
-- Verify mesh connectivity  
-
----
-
-## Shout‑out 
-
-Huge thanks to [lzmesh.com](http://lzmesh.com) for helping me in my advancement of learning Meshtastic.
- <a href="https://discord.gg/FuK8fFjwjq">
-    <img src="https://img.shields.io/badge/Discord-%235865F2.svg?logo=discord&logoColor=white" />
-  </a>
-
----
+- small enough to justify living in firmware
+- safe for busy meshes
+- private when the transport supports it
+- useful when a newly discovered node has not exchanged keys yet
+- predictable rather than clever
+- easy to test as Meshtastic messaging behavior changes
 
 ## Contributing
 
-Meshtastic is a community‑driven project.
+Issues, code, documentation, and radio test reports are welcome. If a Meshtastic firmware change affects direct messaging, key storage, text packet routing, or channel handling, please include the firmware version and the exact ReplyBot command path you tested.
 
-Contributions are welcome—code, documentation, testing, or feedback.  
-Open an issue or submit a pull request via the Meshtastic firmware repository.
+For changes intended for upstream Meshtastic, test against the current `meshtastic/firmware` development branch as well as at least one real device pair.
 
----
+## Shout-out
+
+Huge thanks to [lzmesh.com](http://lzmesh.com) for helping with Meshtastic experimentation and learning.
+
+<a href="https://discord.gg/FuK8fFjwjq">
+  <img src="https://img.shields.io/badge/Discord-%235865F2.svg?logo=discord&logoColor=white" />
+</a>
 
 ## License
 
-Meshtastic firmware, including this module, is licensed under the  
-**GNU General Public License v3.0**. See the `LICENSE` file for details.
+Meshtastic firmware and this module are licensed under the **GNU General Public License v3.0**. See [`LICENSE`](LICENSE) for the full text.
